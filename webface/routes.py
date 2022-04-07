@@ -24,8 +24,14 @@ def prihlasit(function):
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template("base.html.j2")
-
+    if "nick" in session:
+        with sqlite3.connect(dbfile) as conn:
+            tabulka=conn.execute("SELECT nick, text, id FROM prispevek")
+            #print(list(tabulka))
+        return render_template("base.html.j2",tabulka=tabulka)
+    else:
+        flash("Pro zobrazení je nutno přihláśení!")
+        return redirect(url_for("login"))
 
 @app.route("/login/")
 def login():
@@ -42,8 +48,26 @@ def login_post():
             print(tabulka)
         if tabulka and check_password_hash(tabulka[0][0], passwd):
             flash("Ano!")
+            session["nick"]=nick
         else:
             flash("Ne!")
+    return redirect(url_for("index"))
+
+
+@app.route("/logout/")
+def logout():
+    session.pop("nick",None)
+    return redirect(url_for("index"))
+
+
+@app.route("/insert/", methods=["POST"])
+def insert():
+    if "nick" in session:
+        prispevek=request.form.get("prispevek")
+        with sqlite3.connect(dbfile) as conn:
+            conn.execute("INSERT INTO prispevek (text, nick) VALUES (?, ?)", [prispevek, session["nick"]])
+    else:
+        abort(403)
     return redirect(url_for("index"))
 
 
@@ -58,7 +82,7 @@ def register_post():
     passwd1 = request.form.get("passwd1")
     passwd2 = request.form.get("passwd2")
     if nick and passwd1 and passwd2 == passwd1:
-        hashpasswd = generate_password_hash('passwd1')
+        hashpasswd = generate_password_hash(passwd1)
         with sqlite3.connect(dbfile) as conn:
             try:
                 conn.execute("INSERT INTO uzivatel (nick,passwd) VALUES (?,?)", [nick, hashpasswd])

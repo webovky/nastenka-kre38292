@@ -12,6 +12,7 @@
   <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
 
+
 </head>
 
 <body>
@@ -19,12 +20,23 @@
 
 
   <nav>
+
+  <p style="width:20%;float:right;border:solid 2px black">
+  {% if "nick" in session %}
+    Jsi přihlášen jako: {{ session["nick"] }}
+    <a href="{{ url_for("logout") }}">Logout</a>
+  {% else %}
+    Nejsi přihlášen!
+  {% endif %}
+  </p>
+
   <p><img src="{{ url_for('static', filename='flask-icon.png') }}" /></p>
   <ul>
     <li><a href="{{ url_for('index') }}">Index</a></li>
     <li><a href="{{ url_for('login') }}">Login</a></li>
     <li><a href="{{ url_for('register') }}">Register</a></li>
   </ul></nav>
+
 
 
 {% with messages = get_flashed_messages() %}
@@ -41,9 +53,30 @@
 
 {% block obsah %}
 
-<h1>Nátěnka</h1>
+<h1>Nástěnka</h1>
+Vložit příspěvěk:
+<form action="{{ url_for("insert") }}" method="post">
+  <textarea name="prispevek" id="prispevek" cols="40" rows="8">Tvůj příspěvek</textarea>
+  <button type="submit">Odeslat příspěvek</button>
+</form>
+
+<h2>Vloženo:</h2>
 
 
+<dl>
+{% for nick, text, id in tabulka %}
+  <dt><i>{{ nick }}</dt>
+  <dd>
+    {{ text }}
+    {% if nick==session["nick"] %}
+    <form action="/delete/" method="post">
+      <input type="hidden" name="id" id="id" style="float:right" value="{{ id }}"">
+      <button type="submit">Smazat</button>
+    </form>
+    {% endif %}}
+  </dd>
+{% endfor %}
+</dl>
 
 
 {% endblock obsah %}
